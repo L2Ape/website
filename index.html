@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" type="image/png" href="favicon.ico"/>
+    <title>OBAYC</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial;
+            font-size: 17px;
+        }
+
+        #myVideo {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            min-width: 100%;
+            min-height: 100%;
+        }
+
+        .content {
+            position: fixed;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            color: #f1f1f1;
+            width: 100%;
+            padding: 20px;
+        }
+
+        #mint {
+            width: 200px;
+            font-size: 18px;
+            padding: 10px;
+            border: none;
+            background: #000;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        #mint:hover {
+            background: #ddd;
+            color: black;
+        }
+
+        #amount {
+            width: 200px;
+            font-size: 18px;
+            padding: 10px;
+            border: none;
+            background: #000;
+            color: #fff;
+            cursor: pointer;
+        }
+        
+    </style>
+
+    <script>
+        const mint = async function () {
+            if (typeof window.ethereum === 'undefined') {
+                return;
+            } else {
+                console.log(window.ethereum);
+            }
+
+            if (window.ethereum.chainId != "0xa") {
+                try {
+                    await ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: '0xa' }],
+                    });
+                } catch (switchError) {
+                    console.log("switchError: ", switchError)
+                    // This error code indicates that the chain has not been added to MetaMask.
+                    if (switchError.code === 4902) {
+                        console.log("4902");
+                        try {
+                        await ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [{
+                                chainId: '0xa', 
+                                rpcUrls: ['https://mainnet.optimism.io'],
+                                chainName: 'Optimism Mainnet',
+                                blockExplorerUrls: ['https://optimistic.etherscan.io']}],
+                        });
+                        } catch (addError) {
+                            // handle "add" error
+                            return;
+                        }
+                    }
+                    // handle other "switch" errors
+                    return;
+                }
+            }
+
+            // Will Start the metamask extension
+            await ethereum.request({ method: 'eth_requestAccounts' });
+
+            const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+            console.log(accounts);
+
+            var amount = document.getElementById("amount").value;
+            if (amount > 20) {amount = 20;}
+            var data = "0xa723533e" + Number(amount).toString(16).padStart(64, '0');    // mintApe(uint256)
+            console.log(data);
+            
+            var value = new BigNumber(5000000000000000);
+            value = value.multipliedBy(amount)
+            
+            var params = [
+                {
+                    from: accounts[0],
+                    to: '0x2596B971eE0dE4532566C59FA394C0D29f21D224',
+                    data: data,
+                    value: value.toString(16),
+                },
+            ];
+
+            await ethereum
+                .request({
+                    method: 'eth_sendTransaction',
+                    params,
+                })
+                .then((result) => {
+                    // The result varies by RPC method.
+                    // For example, this method will return a transaction hash hexadecimal string on success.
+                    console.log(result);
+                })
+                .catch((error) => {
+                    // If the request fails, the Promise will reject with an error.
+                });
+        };
+
+    </script>
+</head>
+
+<body>
+
+    <video autoplay muted loop id="myVideo">
+        <source src="club-landing.mp4" type="video/mp4">
+        Your browser does not support HTML5 video.
+    </video>
+
+    <div class="content">
+        <h1>Optimistic Bored Ape Yacht Club</h1>
+        <p>The Bored Ape Yacht Club now on Optimistic Ethereum. Per Ape only 0.005 ETH.</p>
+        <input id="amount" type="number" min="1" max="20" value="1">
+        <button id="mint" onclick="mint()">Mint</button>
+    </div>
+
+</body>
+
+</html>
